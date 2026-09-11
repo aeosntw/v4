@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>aeos v4</title></head><body><script>
+(function(){
+var REPO="aeosntw/v4",REF="main",PREFIX_CANDIDATES=["dist/",""],MARKER="router-auto.js",SHA_CACHE_KEY="aeos_build_sha",SHA_CACHE_TTL_MS=18e5,REF_API="https://api.github.com/repos/"+REPO+"/git/refs/heads/"+REF;
+function rootFor(ref,prefix){return "https://cdn.jsdelivr.net/gh/"+REPO+"@"+ref+"/"+prefix;}
+function readCachedSha(){try{var raw=localStorage.getItem(SHA_CACHE_KEY);if(!raw)return "";var entry=JSON.parse(raw);if(!entry||!/^[0-9a-f]{40}$/.test(entry.sha))return "";if(Date.now()-entry.at>SHA_CACHE_TTL_MS)return "";return entry.sha;}catch(e){return "";}}
+function writeCachedSha(sha){try{localStorage.setItem(SHA_CACHE_KEY,JSON.stringify({sha:sha,at:Date.now()}));}catch(e){}}
+function forgetCachedSha(){try{localStorage.removeItem(SHA_CACHE_KEY);}catch(e){}}
+function resolveRef(){var cached=readCachedSha();if(cached)return Promise.resolve(cached);return fetch(REF_API,{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(data){var sha=data&&data.object&&data.object.sha;if(!/^[0-9a-f]{40}$/.test(String(sha)))return REF;writeCachedSha(sha);return sha;}).catch(function(){return REF;});}
+function dirOf(url){return String(url).replace(/[?#].*$/,"").replace(/[^\/]*$/,"");}
+function detectOpaqueOrigin(){try{var url=URL.createObjectURL(new Blob([""],{type:"text/plain"})),opaque=/^blob:null\//i.test(String(url));try{URL.revokeObjectURL(url);}catch(e){}return opaque;}catch(e){try{return location.protocol==="file:";}catch(e2){return false;}}}
+var OPAQUE_ORIGIN=detectOpaqueOrigin();
+function selfFileName(){try{var path=location.pathname.replace(/\/+$/,"");return decodeURIComponent(path.slice(path.lastIndexOf("/")+1))||"this file";}catch(e){return "this file";}}
+function hostHintJson(root){return JSON.stringify({mode:"singlefile",base:root,file:selfFileName(),opaqueOrigin:OPAQUE_ORIGIN});}
+function buildBootstrap(root){return [
+'(function(){',
+'var ROOT='+JSON.stringify(root)+';',
+'var HOSTJSON='+JSON.stringify(hostHintJson(root))+';',
+'var OPEN="<"+"script>",CLOSE="<"+"/"+"script>";',
+'function baseNow(){try{return document.baseURI||ROOT;}catch(e){return ROOT;}}',
+'function dirOf(url){return String(url).replace(/[?#].*$/,"").replace(/[^\\/]*$/,"");}',
+'function searchOf(url){var m=/\\?[^#]*/.exec(String(url));return m?m[0]:"";}',
+'function installUrlShim(){var Native=window.URL;if(!Native||Native.__aeosShimmed)return;function Shim(input,base){if(arguments.length<2||base===undefined)return new Native(input);try{return new Native(input,base);}catch(e){return new Native(input,baseNow());}}Shim.prototype=Native.prototype;Object.getOwnPropertyNames(Native).forEach(function(key){if(key==="prototype"||key==="length"||key==="name")return;var value=Native[key];Shim[key]=typeof value==="function"?value.bind(Native):value;});Shim.__aeosShimmed=true;try{window.URL=Shim;}catch(e){}}',
+'installUrlShim();',
+'function installSearchShim(){var search=String(window.__AEOS_SEARCH__||"");if(!search)return;try{if(location.search)return;}catch(e){}var Native=window.URLSearchParams;if(!Native||Native.__aeosShimmed)return;function Shim(init){if(arguments.length===1&&(init===""||init===null||init===undefined))return new Native(search);return arguments.length?new Native(init):new Native();}Shim.prototype=Native.prototype;Object.getOwnPropertyNames(Native).forEach(function(key){if(key==="prototype"||key==="length"||key==="name")return;var value=Native[key];Shim[key]=typeof value==="function"?value.bind(Native):value;});Shim.__aeosShimmed=true;try{window.URLSearchParams=Shim;}catch(e){}}',
+'installSearchShim();',
+'function absolute(rel){try{return new URL(String(rel),baseNow()).href;}catch(e){return "";}}',
+'function isOurPage(rel){var value=String(rel==null?"":rel);if(!value)return false;if(/^(about:|blob:|javascript:|data:|mailto:)/i.test(value))return false;var url=absolute(value);if(!url||url.indexOf(ROOT)!==0)return false;var path=url.slice(ROOT.length).split("?")[0].split("#")[0];return /\\.html?$/i.test(path);}',
+'function injectInto(h,pageUrl){var base=dirOf(pageUrl)||ROOT;var head=OPEN+"var __AEOS_HOST__="+HOSTJSON+";"+CLOSE+OPEN+"var __AEOS_SEARCH__="+JSON.stringify(searchOf(pageUrl))+";"+CLOSE+OPEN+"var __AEOS_BOOT__="+JSON.stringify(__AEOS_BOOT__)+";(0,eval)(__AEOS_BOOT__);"+CLOSE;var tag=\'<base href="\'+base+\'">\'+head;if(/<head[^>]*>/i.test(h))return h.replace(/<head([^>]*)>/i,"<head$1>"+tag);return tag+h;}',
+'function loadInto(iframe,rel){var url=absolute(String(rel).split("#")[0]);fetch(url,{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(h){iframe.srcdoc=injectInto(h,url);}).catch(function(e){iframe.srcdoc="<p style=\\"color:#fff;font:14px system-ui;padding:1rem\\">aeos: failed to load "+rel+": "+e+"</p>";});}',
+'var proto=HTMLIFrameElement.prototype,descriptor=Object.getOwnPropertyDescriptor(proto,"src");',
+'if(descriptor&&descriptor.set){Object.defineProperty(proto,"src",{configurable:true,get:descriptor.get,set:function(v){if(isOurPage(v)){loadInto(this,v);}else{descriptor.set.call(this,v);}}});}',
+'var nativeSetAttribute=Element.prototype.setAttribute;',
+'Element.prototype.setAttribute=function(name,value){if(name==="src"&&this instanceof HTMLIFrameElement&&isOurPage(value)){loadInto(this,value);return;}return nativeSetAttribute.call(this,name,value);};',
+'})();'
+].join("\n");}
+function searchOf(url){var m=/\?[^#]*/.exec(String(url));return m?m[0]:"";}
+function injectInto(html,pageUrl,root){var base=dirOf(pageUrl)||root,boot=buildBootstrap(root),tag='<base href="'+base+'">'+'<'+'script>var __AEOS_HOST__='+hostHintJson(root)+';<'+'/'+'script>'+'<'+'script>var __AEOS_SEARCH__='+JSON.stringify(searchOf(pageUrl))+';<'+'/'+'script>'+'<'+'script>var __AEOS_BOOT__='+JSON.stringify(boot)+';(0,eval)(__AEOS_BOOT__);<'+'/'+'script>';if(/<head[^>]*>/i.test(html))return html.replace(/<head([^>]*)>/i,'<head$1>'+tag);return tag+html;}
+function fail(message){document.body.innerHTML='<p style="color:#fff;font:16px system-ui;padding:2rem">aeos v4 could not load: '+message+'</p>';}
+function firstUsableRoot(roots,index){index=index||0;if(index>=roots.length)return Promise.reject(new Error("no complete build found for "+REPO));var root=roots[index];return fetch(root+MARKER,{cache:"no-store"}).then(function(r){return r.ok?root:firstUsableRoot(roots,index+1);}).catch(function(){return firstUsableRoot(roots,index+1);});}
+function candidateRoots(ref){var roots=[],i;for(i=0;i<PREFIX_CANDIDATES.length;i++)roots.push(rootFor(ref,PREFIX_CANDIDATES[i]));if(ref!==REF){for(i=0;i<PREFIX_CANDIDATES.length;i++)roots.push(rootFor(REF,PREFIX_CANDIDATES[i]));}return roots;}
+resolveRef().then(function(ref){return firstUsableRoot(candidateRoots(ref)).then(function(root){if(ref!==REF&&root.indexOf("@"+ref+"/")===-1)forgetCachedSha();return root;});}).then(function(root){var entry=root+"index.html";return fetch(entry,{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.text();}).then(function(html){document.open();document.write(injectInto(html,entry,root));document.close();});}).catch(function(e){fail(String(e));});
+})();
+</script></body></html>
