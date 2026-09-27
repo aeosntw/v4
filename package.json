@@ -1,0 +1,22 @@
+{
+  "name": "aeos-ub",
+  "version": "4.0.1",
+  "description": "Aeos v4 static distribution and single-file launcher",
+  "license": "MIT",
+  "private": false,
+  "files": [
+    "dist",
+    "singles",
+    "mod.ts"
+  ],
+  "main": "dist/index.html",
+  "unpkg": "dist/index.html",
+  "jsdelivr": "dist/index.html",
+  "scripts": {
+    "build": "node build.js",
+    "pack:check": "npm pack --dry-run"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

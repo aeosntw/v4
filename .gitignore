@@ -1,0 +1,12 @@
+# Ignore all files and directories in the repository root
+/*
+
+# Whitelist the /dist directory and everything inside it
+!/dist/
+!/singles/
+!/.github/
+!/.gitignore
+!/package.json
+!/jsr.json
+!/mod.ts
+!/README.md
