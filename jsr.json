@@ -8,8 +8,8 @@
       "jsr.json",
       "mod.ts",
       "README.md",
-      "dist",
       "singles"
     ]
   }
+
 }
