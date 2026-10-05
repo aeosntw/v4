@@ -10,7 +10,7 @@ function forgetCachedSha(){try{localStorage.removeItem(SHA_CACHE_KEY);}catch(e){
 function resolveRef(){var cached=readCachedSha();if(cached)return Promise.resolve(cached);return fetch(REF_API,{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(data){var sha=data&&data.object&&data.object.sha;if(!/^[0-9a-f]{40}$/.test(String(sha)))return REF;writeCachedSha(sha);return sha;}).catch(function(){return REF;});}
 function dirOf(url){return String(url).replace(/[?#].*$/,"").replace(/[^\/]*$/,"");}
 function searchOf(url){var m=/\?[^#]*/.exec(String(url));return m?m[0]:"";}
-function detectOpaqueOrigin(){try{var url=URL.createObjectURL(new Blob([""],{type:"text/plain"})),opaque=/^blob:null\//i.test(String(url));try{URL.revokeObjectURL(url);}catch(e){}return opaque;}catch(e){try{return location.protocol==="file:";}catch(e2){return false;}}}
+function detectOpaqueOrigin(){try{if(location.protocol==="file:")return true;}catch(e){}try{var url=URL.createObjectURL(new Blob([""],{type:"text/plain"})),opaque=/^blob:(null|file)\b/i.test(String(url))||/^blob:null\//i.test(String(url));try{URL.revokeObjectURL(url);}catch(e){}return opaque;}catch(e){try{return location.protocol==="file:";}catch(e2){return false;}}}
 var OPAQUE_ORIGIN=detectOpaqueOrigin();
 function selfFileName(){try{var path=location.pathname.replace(/\/+$/,"");return decodeURIComponent(path.slice(path.lastIndexOf("/")+1))||"this file";}catch(e){return "this file";}}
 function hostHintJson(root){return JSON.stringify({mode:"singlefile",base:root,file:selfFileName(),opaqueOrigin:OPAQUE_ORIGIN});}

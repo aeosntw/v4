@@ -6,7 +6,7 @@
     "enabled": true
   },
   "assets": {
-    "directory": "MoonPieLauncher"
+    "directory": "Launcher"
   },
   "compatibility_flags": [
     "nodejs_compat"
