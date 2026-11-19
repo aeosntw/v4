@@ -7,7 +7,7 @@
     // Keep Lumin in this frame when the single-file launcher aliases self.
     const self = window;
     const assetBase = document.currentScript.src;
-    const assets = {"boot":"c979de69cb5b0a2caeae5629.json","worker":"653782b15077da510187e3f7.js","packedBoot":true};
+    const assets = {"boot":"81bc3beb4e19a24e4bc5f5d8.json","worker":"273cb880ed900866d8683d88.js","packedBoot":true};
     const fetchAsset = window.fetch.bind(window);
     const fetchForSdk = (input, options) => {
         const url = new URL(input instanceof Request ? input.url : input, document.baseURI);
